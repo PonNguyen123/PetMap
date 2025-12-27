@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PetNourish – HCMC Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Leaflet (OpenStreetMap UI) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Leaflet Routing Machine -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+  <!-- Your CSS -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Falling leaves background -->
+  <div class="leaf-layer" aria-hidden="true">
+    <div class="leaf">🍃</div><div class="leaf">🍂</div><div class="leaf">🍁</div>
+    <div class="leaf">🍃</div><div class="leaf">🍂</div><div class="leaf">🍁</div>
+    <div class="leaf">🍃</div><div class="leaf">🍂</div><div class="leaf">🍁</div>
+  </div>
+
+  <div class="app-shell">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-circle"><span class="logo-paw">🐾</span></div>
+        <div class="brand-text">
+          <h1>PetNourish</h1>
+          <p>HCMC Pet Supply Database</p>
+        </div>
+      </div>
+      <div class="header-controls">
+        <button class="theme-toggle" id="theme-toggle" type="button">
+          <span class="theme-toggle__icon">🌙</span>
+          <span class="theme-toggle__label">Dark</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="top-tabs">
+      <button class="tab-btn tab-btn--active" id="tab-map" type="button">🗺️ Map</button>
+      <button class="tab-btn" id="tab-food" type="button">🍽️ Food & Price</button>
+      <button class="tab-btn" id="tab-care" type="button">🧑‍🦯 Care Help</button>
+    </nav>
+
+    <main class="app-main--single">
+
+      <!-- =========================
+           VIEW: MAP
+           ========================= -->
+      <section class="view view--active" id="view-map">
+        <div class="map-wrap">
+          
+          <!-- EXPLICIT BACK BUTTON (Visible only in Fullscreen) -->
+          <button class="map-exit-btn" id="btn-exit-fullscreen" type="button">
+            ⬅ Back to Menu
+          </button>
+
+          <div id="map" class="map-canvas"></div>
+
+          <!-- Floating map buttons -->
+          <div class="map-fab-stack">
+            <button class="map-fab" id="btn-my-location" type="button" title="My location">🎯</button>
+            <button class="map-fab" id="btn-fullscreen" type="button" title="Fullscreen">⤢</button>
+          </div>
+          
+          <!-- Bottom Sheet -->
+          <div class="bottom-sheet">
+            <div class="sheet-grab"></div>
+            <div class="sheet-head">
+              <h3 class="sheet-title">Navigate</h3>
+              <button class="btn btn-secondary" id="btn-clear-route" type="button">Clear Route</button>
+            </div>
+            <div class="sheet-body">
+               <div class="search-row">
+                 <input id="dest-input" type="text" placeholder="Search HCMC location..." />
+                 <button class="btn btn-primary" id="btn-dest-search" type="button">Go</button>
+               </div>
+               <div id="search-results" class="search-results"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================
+           VIEW: FOOD & PRICE
+           ========================= -->
+      <section class="view" id="view-food">
+        <section class="card">
+          <h2>Pet Food & Supplies</h2>
+          <p class="subtitle">Database of items in Ho Chi Minh City</p>
+
+          <!-- Filters -->
+          <div class="food-controls">
+             <input id="food-search" type="text" placeholder="Search items..." />
+             <select id="food-category">
+               <option value="any">All Categories</option>
+               <option value="Dry Food">Dry Food</option>
+               <option value="Wet Food">Wet Food</option>
+               <option value="Toys">Toys</option>
+               <option value="Bedding">Bedding</option>
+               <option value="Accessories">Accessories</option>
+             </select>
+          </div>
+
+          <!-- The Grid -->
+          <div class="food-grid" id="food-grid">
+            <!-- Items injected by JS -->
+          </div>
+        </section>
+      </section>
+
+      <!-- =========================
+           VIEW: CARE (Placeholder)
+           ========================= -->
+      <section class="view" id="view-care">
+        <section class="card">
+          <h2>Care Help</h2>
+          <p class="subtitle">Find pet sitters in your area.</p>
+          <div class="sitters-list" id="sitters-list">
+             <div class="stop-empty">Feature coming soon.</div>
+          </div>
+        </section>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- JS -->
+  <script src="script.js"></script>
+</body>
+</html>
