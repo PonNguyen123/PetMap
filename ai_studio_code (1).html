@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HCMC Pet Supply Locator</title>
+    
+    <!-- Leaflet CSS (Map Styles) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* CSS STYLES */
+        :root {
+            --primary: #2E78FF;
+            --secondary: #f4f4f9;
+            --text: #333;
+            --price: #27ae60;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--secondary);
+        }
+
+        /* Layout: Left Map, Right List */
+        #map-container {
+            flex: 1.5; /* Map takes 60% width */
+            position: relative;
+            height: 100%;
+        }
+
+        #sidebar {
+            flex: 1; /* Sidebar takes 40% width */
+            background: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 450px;
+        }
+
+        /* Sidebar Header */
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header h1 { margin: 0; font-size: 1.2rem; }
+        header p { margin: 5px 0 0; font-size: 0.85rem; opacity: 0.8; }
+
+        /* Item List */
+        #item-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .item-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary);
+        }
+
+        .item-card.active {
+            border-left: 4px solid var(--primary);
+            background-color: #f8fbff;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .item-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .item-price {
+            font-weight: 700;
+            color: var(--price);
+            font-size: 0.95rem;
+            background: #e8f5e9;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .store-info {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .item-desc {
+            font-size: 0.8rem;
+            color: #888;
+            line-height: 1.4;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { flex-direction: column-reverse; }
+            #sidebar { max-width: 100%; height: 50vh; }
+            #map-container { height: 50vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MAP SECTION -->
+    <div id="map-container">
+        <div id="map" style="width: 100%; height: 100%;"></div>
+    </div>
+
+    <!-- SIDEBAR LIST SECTION -->
+    <div id="sidebar">
+        <header>
+            <h1>🐾 HCMC Pet Supply Database</h1>
+            <p>10 Categories • 10 Stores • Live Locations</p>
+        </header>
+        <div id="item-list">
+            <!-- Items injected here by JS -->
+        </div>
+    </div>
+
+    <!-- LEAFLET JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        /* ============================
+           1. DATABASE OF ITEMS & PRICES
+           ============================ */
+        const inventoryDB = [
+            {
+                id: 1,
+                item: "Royal Canin Medium Adult (3kg)",
+                category: "Dry Food",
+                price: "580,000 VND",
+                desc: "Complete feed for medium breed adult dogs over 12 months.",
+                store: "Pet Mart - Nguyen Thi Minh Khai",
+                lat: 10.7845,
+                lng: 106.6980
+            },
+            {
+                id: 2,
+                item: "Whiskas Tuna Can (400g)",
+                category: "Wet Food",
+                price: "35,000 VND",
+                desc: "Tasty tuna loaf wet food for adult cats.",
+                store: "Paddy Pet Shop - Thao Dien",
+                lat: 10.8062,
+                lng: 106.7321
+            },
+            {
+                id: 3,
+                item: "Bentonite Cat Litter (10L)",
+                category: "Litter",
+                price: "120,000 VND",
+                desc: "High clumping, lavender scented dust-free litter.",
+                store: "Dog Paradise - District 3",
+                lat: 10.7765,
+                lng: 106.6854
+            },
+            {
+                id: 4,
+                item: "Plush Donut Bed (Large)",
+                category: "Bedding",
+                price: "450,000 VND",
+                desc: "Anxiety-relief fluffy bed, machine washable.",
+                store: "Pet City - Ly Chinh Thang",
+                lat: 10.7856,
+                lng: 106.6832
+            },
+            {
+                id: 5,
+                item: "Multi-Level Cat Tree (1.2m)",
+                category: "Furniture",
+                price: "1,200,000 VND",
+                desc: "Sisal scratching posts with hammock and condo.",
+                store: "Little Dog - District 7",
+                lat: 10.7301,
+                lng: 106.7058
+            },
+            {
+                id: 6,
+                item: "Kong Classic Toy (Medium)",
+                category: "Toys",
+                price: "280,000 VND",
+                desc: "Durable rubber chew toy, can be filled with treats.",
+                store: "Arale Petshop - Go Vap",
+                lat: 10.8374,
+                lng: 106.6463
+            },
+            {
+                id: 7,
+                item: "Plastic Travel Carrier",
+                category: "Transport",
+                price: "350,000 VND",
+                desc: "IATA approved air travel crate for cats and small dogs.",
+                store: "Oh My Pet - Phu Nhuan",
+                lat: 10.7905,
+                lng: 106.6758
+            },
+            {
+                id: 8,
+                item: "SOS Hypoallergenic Shampoo",
+                category: "Grooming",
+                price: "90,000 VND",
+                desc: "Specialized formula for pets with sensitive skin.",
+                store: "Pet Saigon - District 10",
+                lat: 10.7789,
+                lng: 106.6805
+            },
+            {
+                id: 9,
+                item: "Reflective Nylon Leash",
+                category: "Accessories",
+                price: "150,000 VND",
+                desc: "1.5m leash with padded handle and night visibility.",
+                store: "Happy Pet Care - District 1",
+                lat: 10.7892,
+                lng: 106.6968
+            },
+            {
+                id: 10,
+                item: "Calcium Bone Supplements",
+                category: "Health",
+                price: "210,000 VND",
+                desc: "Daily chewables for strengthening teeth and bones.",
+                store: "Hachiko Petshop - Phu Nhuan",
+                lat: 10.7965,
+                lng: 106.6912
+            }
+        ];
+
+        /* ============================
+           2. INITIALIZE MAP (LEAFLET)
+           ============================ */
+        // Centered on HCMC
+        const map = L.map('map').setView([10.7769, 106.7009], 13);
+
+        // Add OpenStreetMap Tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const markers = {}; // To store marker references
+
+        /* ============================
+           3. RENDER LOGIC
+           ============================ */
+        const listContainer = document.getElementById('item-list');
+
+        inventoryDB.forEach((product) => {
+            // A. Create Sidebar HTML Element
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.id = `card-${product.id}`;
+            
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="item-name">${product.item}</span>
+                    <span class="item-price">${product.price}</span>
+                </div>
+                <div class="store-info">
+                    📍 ${product.store}
+                </div>
+                <div class="item-desc">
+                    ${product.category} • ${product.desc}
+                </div>
+            `;
+            listContainer.appendChild(card);
+
+            // B. Add Marker to Map
+            const marker = L.marker([product.lat, product.lng]).addTo(map);
+            
+            // Marker Popup
+            marker.bindPopup(`
+                <b>${product.store}</b><br>
+                ${product.item}<br>
+                <span style="color:#27ae60; font-weight:bold">${product.price}</span>
+            `);
+
+            markers[product.id] = marker;
+
+            // C. Interaction: Click Card -> Move Map
+            card.addEventListener('click', () => {
+                // Remove active class from all
+                document.querySelectorAll('.item-card').forEach(c => c.classList.remove('active'));
+                // Add active to current
+                card.classList.add('active');
+                
+                // Fly to location
+                map.flyTo([product.lat, product.lng], 16, {
+                    duration: 1.5
+                });
+                
+                // Open Popup
+                marker.openPopup();
+            });
+
+            // D. Interaction: Click Marker -> Highlight Card
+            marker.on('click', () => {
+                document.querySelectorAll('.item-card').forEach(c => c.classList.remove('active'));
+                const targetCard = document.getElementById(`card-${product.id}`);
+                if(targetCard) {
+                    targetCard.classList.add('active');
+                    targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
